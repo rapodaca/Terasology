@@ -59,6 +59,10 @@ jar.doLast {
 	ant.signjar(jar: jar.archivePath, keystore: 'applet/tera.keystore', alias: 'Terasology', storepass: 'Terasology')
 }
 
+test {
+	dependsOn copyResources
+}
+
 task dist(type:Copy) {
 	description = 'Creates a fully-functional game folder.'
 	dependsOn jar
