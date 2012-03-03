@@ -21,6 +21,10 @@ public class ComponentListener {
 		// no-op
 	}
 	
+	public void rightButtonUp(Component component) {
+		// no-op
+	}
+	
 	public void mouseUp(Component component) {
 		// no-op
 	}

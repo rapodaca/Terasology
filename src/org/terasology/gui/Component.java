@@ -61,36 +61,22 @@ public class Component {
 		if (!containsPoint(x, y)) {
 			if (_lastCursor != null) {
 				dispatch(EventType.MOUSE_EXITED);
+				_lastCursor = null;
 			}
 			return;
 		}
 		
-		if (_lastCursor != null) {
-			dispatch(EventType.MOUSE_MOVED);
-		} else {
-			dispatch(EventType.MOUSE_ENTERED);
+		switch (button) {
+		case NONE:
+			handleMouseNoButton(x, y);
+			break;
+		case LEFT:
+			handleMouseLeft(x, y);
+			break;
+		case RIGHT:
+			handleMouseRight(x, y);
+			break;
 		}
-		
-		Vector2d newCursor = new Vector2d(x, y);
-		
-		if (newCursor.equals(_lastCursor)) {
-			switch (button) {
-			case NONE:
-				if (_lastButton != MouseButton.NONE) {
-					dispatch(EventType.LEFT_MOUSE_UP);
-				}
-				break;
-			case LEFT:
-				dispatch(EventType.LEFT_MOUSE_DOWN);
-				break;
-			case RIGHT:
-				dispatch(EventType.RIGHT_MOUSE_DOWN);
-				break;
-			}			
-		}
-		
-		_lastButton = button;
-		_lastCursor = new Vector2d(x, y);
 	}
 	
 	public void setBounds(double x, double y, double width, double height) {
@@ -127,6 +113,9 @@ public class Component {
 			case RIGHT_MOUSE_DOWN:
 				listener.rightButtonDown(this);
 				break;
+			case RIGHT_MOUSE_UP:
+				listener.rightButtonUp(this);
+				break;
 			case MOUSE_MOVED:
 				listener.mouseMoved(this);
 				break;
@@ -147,5 +136,51 @@ public class Component {
 		for (Component child : _children) {
 			child.handleMouse(x, y, button);
 		}
+	}
+	
+	private void recordCursor(double x, double y) {
+		_lastCursor = new Vector2d(x, y);
+	}
+	
+	private void handleMouseNoButton(double x, double y) {
+		if (_lastCursor == null) {
+			dispatch(EventType.MOUSE_ENTERED);		
+		} else {
+			dispatch(EventType.MOUSE_MOVED);			
+		}
+		
+		switch (_lastButton) {
+		case LEFT:
+			dispatch(EventType.LEFT_MOUSE_UP);
+			break;
+		case RIGHT:
+			dispatch(EventType.RIGHT_MOUSE_UP);
+			break;
+		}
+		
+		recordCursor(x, y);
+	}
+	
+	private void handleMouseLeft(double x, double y) {
+		switch (_lastButton) {
+		case NONE:
+			dispatch(EventType.LEFT_MOUSE_DOWN);			
+			break;
+		case LEFT:
+			dispatch(EventType.MOUSE_DRAGGED);
+			break;
+		case RIGHT:
+			break;
+		}
+		
+		_lastButton = MouseButton.LEFT;
+	}
+	
+	private void handleMouseRight(double x, double y) {
+		if (_lastButton != MouseButton.RIGHT) {
+			dispatch(EventType.RIGHT_MOUSE_DOWN);
+		}
+		
+		_lastButton = MouseButton.RIGHT;
 	}
 }
