@@ -1,0 +1,7 @@
+package org.terasology.gui;
+
+public enum EventType {
+	MOUSE_DRAGGED, MOUSE_MOVED, MOUSE_ENTERED, MOUSE_EXITED,
+	LEFT_MOUSE_DOWN, LEFT_MOUSE_UP,
+	RIGHT_MOUSE_DOWN, RIGHT_MOUSE_UP
+}

@@ -3,6 +3,8 @@ package org.terasology.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.vecmath.Vector2d;
+
 /**
  * Top-level 2D GUI component.
  */
@@ -14,13 +16,15 @@ public class Component {
 	private double _y;
 	private double _width;
 	private double _height;
-	private boolean _mouseIn;
+	private Vector2d _lastCursor;
+	private MouseButton _lastButton;
 	
 	public Component() {
 		_listeners = new ArrayList<ComponentListener>();
 		_children = new ArrayList<Component>();
 		_parent = null;
-		_mouseIn = false;
+		_lastCursor = null;
+		_lastButton = MouseButton.NONE;
 	}
 	
 	public void addListener(ComponentListener listener) {
@@ -51,22 +55,42 @@ public class Component {
 		return _parent;
 	}
 	
-	public void handleMouse(double x, double y) {
-		forwardMouse(x, y);
+	public void handleMouse(double x, double y, MouseButton button) {
+		forwardMouse(x, y, button);
 		
 		if (!containsPoint(x, y)) {
-			if (_mouseIn) {
-				dispatch(ComponentEventType.MOUSE_EXITED);
+			if (_lastCursor != null) {
+				dispatch(EventType.MOUSE_EXITED);
 			}
 			return;
 		}
-		if (_mouseIn) {
-			dispatch(ComponentEventType.MOUSE_MOVED);
+		
+		if (_lastCursor != null) {
+			dispatch(EventType.MOUSE_MOVED);
 		} else {
-			dispatch(ComponentEventType.MOUSE_ENTERED);
-			
-			_mouseIn = true;
+			dispatch(EventType.MOUSE_ENTERED);
 		}
+		
+		Vector2d newCursor = new Vector2d(x, y);
+		
+		if (newCursor.equals(_lastCursor)) {
+			switch (button) {
+			case NONE:
+				if (_lastButton != MouseButton.NONE) {
+					dispatch(EventType.LEFT_MOUSE_UP);
+				}
+				break;
+			case LEFT:
+				dispatch(EventType.LEFT_MOUSE_DOWN);
+				break;
+			case RIGHT:
+				dispatch(EventType.RIGHT_MOUSE_DOWN);
+				break;
+			}			
+		}
+		
+		_lastButton = button;
+		_lastCursor = new Vector2d(x, y);
 	}
 	
 	public void setBounds(double x, double y, double width, double height) {
@@ -91,14 +115,17 @@ public class Component {
 		_parent = parent;
 	}
 	
-	protected void dispatch(ComponentEventType type) {		
+	protected void dispatch(EventType type) {		
 		for (ComponentListener listener : _listeners) {
 			switch(type) {
-			case MOUSE_DOWN:
-				listener.mouseDown(this);
+			case LEFT_MOUSE_DOWN:
+				listener.leftButtonDown(this);
 				break;
-			case MOUSE_UP:
-				listener.mouseUp(this);
+			case LEFT_MOUSE_UP:
+				listener.leftButtonUp(this);
+				break;
+			case RIGHT_MOUSE_DOWN:
+				listener.rightButtonDown(this);
 				break;
 			case MOUSE_MOVED:
 				listener.mouseMoved(this);
@@ -116,9 +143,9 @@ public class Component {
 		}
 	}
 	
-	private void forwardMouse(double x, double y) {
+	private void forwardMouse(double x, double y, MouseButton button) {
 		for (Component child : _children) {
-			child.handleMouse(x, y);
+			child.handleMouse(x, y, button);
 		}
 	}
 }
