@@ -3,8 +3,9 @@ package org.terasology.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.input.Mouse;
-
+/**
+ * Top-level 2D GUI component.
+ */
 public class Component {
 	private List<ComponentListener> _listeners;
 	private List<Component> _children;
@@ -13,11 +14,13 @@ public class Component {
 	private double _y;
 	private double _width;
 	private double _height;
+	private boolean _mouseIn;
 	
 	public Component() {
 		_listeners = new ArrayList<ComponentListener>();
 		_children = new ArrayList<Component>();
 		_parent = null;
+		_mouseIn = false;
 	}
 	
 	public void addListener(ComponentListener listener) {
@@ -48,11 +51,21 @@ public class Component {
 		return _parent;
 	}
 	
-	public void handleMouse() {
-		if (containsPoint(Mouse.getX(), Mouse.getY())) {
-			for (Component child : _children) {
-				child.handleMouse();
-			}			
+	public void handleMouse(double x, double y) {
+		forwardMouse(x, y);
+		
+		if (!containsPoint(x, y)) {
+			if (_mouseIn) {
+				dispatch(ComponentEventType.MOUSE_EXITED);
+			}
+			return;
+		}
+		if (_mouseIn) {
+			dispatch(ComponentEventType.MOUSE_MOVED);
+		} else {
+			dispatch(ComponentEventType.MOUSE_ENTERED);
+			
+			_mouseIn = true;
 		}
 	}
 	
@@ -78,7 +91,7 @@ public class Component {
 		_parent = parent;
 	}
 	
-	protected void dispatchEvent(EventType type) {		
+	protected void dispatch(ComponentEventType type) {		
 		for (ComponentListener listener : _listeners) {
 			switch(type) {
 			case MOUSE_DOWN:
@@ -93,7 +106,19 @@ public class Component {
 			case MOUSE_DRAGGED:
 				listener.mouseDragged(this);
 				break;
+			case MOUSE_ENTERED:
+				listener.mouseEntered(this);
+				break;
+			case MOUSE_EXITED:
+				listener.mouseExited(this);
+				break;
 			}
+		}
+	}
+	
+	private void forwardMouse(double x, double y) {
+		for (Component child : _children) {
+			child.handleMouse(x, y);
 		}
 	}
 }

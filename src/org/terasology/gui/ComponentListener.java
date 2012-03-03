@@ -1,6 +1,14 @@
 package org.terasology.gui;
 
 public class ComponentListener {
+	public void mouseEntered(Component component) {
+		
+	}
+	
+	public void mouseExited(Component component) {
+		
+	}
+	
 	public void mouseDown(Component component) {
 		// no-op
 	}
