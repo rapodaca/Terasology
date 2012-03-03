@@ -32,6 +32,7 @@ dependencies{
 	groovy group: 'org.codehaus.groovy', name: 'groovy', version: '1.8.2'
 	compile fileTree(dir: 'libs', include: '*.jar', exclude: 'mockito-all-1.9.0.jar')	
 	testCompile 'junit:junit:4.10'
+	testCompile 'org.mockito:mockito-all:1.9.0'
 }
 
 task copyResources(type:Copy) {
