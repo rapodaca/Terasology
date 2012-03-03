@@ -21,10 +21,12 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.terasology.game.Terasology;
+import org.terasology.logic.audio.Sound;
 import org.terasology.logic.manager.Config;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.logic.manager.TextureManager;
 import org.terasology.logic.manager.ToolManager;
+import org.terasology.logic.manager.AudioManager;
 import org.terasology.logic.tools.ITool;
 import org.terasology.logic.world.Chunk;
 import org.terasology.logic.world.IBlockObserver;
@@ -134,11 +136,11 @@ public class Player extends Character {
     public void update(double delta) {
         PerformanceMonitor.startActivity("Player Camera");
         if (_activeCamera != null) {
-            _activeCamera.update();
+            _activeCamera.update(delta);
 
             // Slightly adjust the field of view when flying
             if (_godMode) {
-                _activeCamera.extendFov(10);
+                _activeCamera.extendFov(24);
             } else {
                 _activeCamera.resetFov();
             }
@@ -652,5 +654,10 @@ public class Player extends Character {
         }
 
         return false;
+    }
+
+    @Override
+    protected void playFootstep(Sound footStep) {
+        AudioManager.play(footStep, this, 0.6f, AudioManager.PRIORITY_HIGH);
     }
 }
