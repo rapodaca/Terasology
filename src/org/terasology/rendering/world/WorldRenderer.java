@@ -18,7 +18,6 @@ package org.terasology.rendering.world;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.newdawn.slick.openal.SoundStore;
 import org.terasology.game.Terasology;
 import org.terasology.logic.characters.Player;
 import org.terasology.logic.entities.Entity;
@@ -176,8 +175,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.1, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("Sunrise").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("Sunrise");
             }
         });
 
@@ -185,8 +183,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.25, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("Afternoon").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("Afternoon");
             }
         });
 
@@ -194,8 +191,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.4, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("Sunset").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("Sunset");
             }
         });
 
@@ -203,8 +199,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.6, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("Dimlight").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("Dimlight");
             }
         });
 
@@ -212,8 +207,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.75, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("OtherSide").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("OtherSide");
             }
         });
 
@@ -221,8 +215,7 @@ public final class WorldRenderer implements IGameObject {
         _worldTimeEventManager.addWorldTimeEvent(new WorldTimeEvent(0.9, true) {
             @Override
             public void run() {
-                SoundStore.get().setMusicVolume(0.1f);
-                AudioManager.getInstance().getAudio("Resurface").playAsMusic(1.0f, 1.0f, false);
+                AudioManager.playMusic("Resurface");
             }
         });
     }
@@ -235,7 +228,6 @@ public final class WorldRenderer implements IGameObject {
         _statVisibleChunks = 0;
         _statIgnoredPhases = 0;
 
-        boolean noMoreUpdates = false;
         for (int i = 0; i < _chunksInProximity.size(); i++) {
             Chunk c = _chunksInProximity.get(i);
 
@@ -257,14 +249,12 @@ public final class WorldRenderer implements IGameObject {
 
                 c.update();
 
-                if (c.isDirty())
+                if (c.isDirty() || c.isLightDirty() || c.isFresh()) {
                     _statDirtyChunks++;
-
-                if ((c.isDirty() || c.isLightDirty() || c.isFresh()) && !noMoreUpdates) {
-                    if (!_chunkUpdateManager.queueChunkUpdate(c, ChunkUpdateManager.UPDATE_TYPE.DEFAULT)) {
-                        noMoreUpdates = true;
-                    }
+                    _chunkUpdateManager.queueChunkUpdate(c, ChunkUpdateManager.UPDATE_TYPE.DEFAULT);
                 }
+
+                _statVisibleChunks++;
             } else if (i > Config.getInstance().getMaxChunkVBOs()) {
                 // Make sure not too many chunk VBOs are available in the video memory at the same time
                 // Otherwise VBOs are moved into system memory which is REALLY slow and causes lag
@@ -282,6 +272,8 @@ public final class WorldRenderer implements IGameObject {
         _renderQueueTransparent.add(_mobManager);
         _renderQueueTransparent.add(_blockParticleEmitter);
         _renderQueueTransparent.add(_blockGrid);
+
+        Chunk.resetStats();
     }
 
     /**
@@ -303,9 +295,6 @@ public final class WorldRenderer implements IGameObject {
         PerformanceMonitor.startActivity("Render World");
         _player.getActiveCamera().lookThrough();
         _player.render();
-
-        // Render all chunks and entities
-        Chunk.resetStats();
 
         glEnable(GL_LIGHT0);
 
@@ -576,15 +565,23 @@ public final class WorldRenderer implements IGameObject {
         AudioManager.getInstance().stopAllSounds();
     }
 
-    public void generateChunks() {
+    /**
+     * Returns true if no more chunks can be generated.
+     *
+     * @return
+     */
+    public boolean generateChunk() {
         for (int i = 0; i < _chunksInProximity.size(); i++) {
             Chunk c = _chunksInProximity.get(i);
-            c.generateVBOs();
 
-            if (c.isDirty() || c.isLightDirty()) {
-                _chunkUpdateManager.queueChunkUpdate(c, ChunkUpdateManager.UPDATE_TYPE.DEFAULT);
+            if (c.isDirty() || c.isLightDirty() || c.isFresh()) {
+                c.processChunk();
+                c.generateVBOs();
+                return false;
             }
         }
+
+        return true;
     }
 
     public void printScreen() {
