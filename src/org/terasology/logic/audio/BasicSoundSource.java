@@ -4,7 +4,6 @@ import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
 import org.terasology.game.Terasology;
 import org.terasology.logic.manager.AudioManager;
-import org.terasology.utilities.FastRandom;
 
 import javax.vecmath.Vector3d;
 
@@ -311,10 +310,10 @@ public class BasicSoundSource implements SoundSource {
         float[] pos = new float[]{(float) position.x, (float) position.y, (float) position.z};
 
         if (this.isAbsolute()) {
-            Vector3d playerPos = this.getPlayerPosition();
-            pos[0] -= playerPos.x;
-            pos[1] -= playerPos.y;
-            pos[2] -= playerPos.z;
+            Vector3d cameraPos = this.getCameraPosition();
+            pos[0] -= cameraPos.x;
+            pos[1] -= cameraPos.y;
+            pos[2] -= cameraPos.z;
         }
 
         alSource3f(this.getSourceId(), AL10.AL_POSITION, pos[0], pos[1], pos[2]);
@@ -339,11 +338,12 @@ public class BasicSoundSource implements SoundSource {
         }
     }
 
-    private Vector3d getPlayerPosition() {
-        return Terasology.getInstance().getActivePlayer().getPosition();
+    private Vector3d getCameraPosition() {
+        return Terasology.getInstance().getActiveCamera().getPosition();
     }
 
     @Override
+    // TODO: This is no guaranteed to be executed at all – move to a safer place
     protected void finalize() throws Throwable {
         if (this.sourceId != 0) {
             AL10.alDeleteSources(this.sourceId);

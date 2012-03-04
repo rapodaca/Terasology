@@ -29,6 +29,7 @@ import org.terasology.logic.world.IWorldProvider;
 import org.terasology.model.blocks.management.BlockManager;
 import org.terasology.model.shapes.BlockShapeManager;
 import org.terasology.performanceMonitor.PerformanceMonitor;
+import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.world.WorldRenderer;
 
 import java.io.File;
@@ -89,9 +90,9 @@ public final class Terasology {
 
         initLogger();
         initNativeLibs();
-        initOpenAL();
         initDisplay();
         initOpenGL();
+        initOpenAL();
         initControls();
         initManagers();
         initTimer(); // Dependant on LWJGL
@@ -358,7 +359,7 @@ public final class Terasology {
 
         state.init();
 
-        _gameStates.put(_state, state);
+        _gameStates.put(s, state);
         return state;
     }
 
@@ -378,13 +379,13 @@ public final class Terasology {
         return _timer.getFps();
     }
 
+    public Camera getActiveCamera() {
+        if (getActiveWorldRenderer() != null)
+            return getActiveWorldRenderer().getActiveCamera();
+        return null;
+    }
+
     public WorldRenderer getActiveWorldRenderer() {
-        //TODO: Review architecture of this? Cervator added to fix audio merge with game state system, not expert!
-        //t3hk0d3 suggested this fix, problem is that OpenALManager.update does a check of getActivePlayer which triggers this
-        //without the state check right here the getGameState would provoke partial game start too early - but a get method shouldn't set?
-        if (_state != GAME_STATE.SINGLE_PLAYER) {
-            return null;
-        }
         StateSinglePlayer singlePlayer = (StateSinglePlayer) getGameState(GAME_STATE.SINGLE_PLAYER);
         return singlePlayer.getWorldRenderer();
     }
@@ -435,6 +436,7 @@ public final class Terasology {
         _instance.init();
         _instance.run();
         _instance.shutdown();
+        Config.getInstance().saveConfig("SAVED_WORLDS/last.cfg");
         System.exit(0);
     }
 }
