@@ -1,7 +1,6 @@
 package org.terasology.gui;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -219,15 +218,12 @@ public class ComponentTest {
 	}
 	public static class HandleMouse {
 		private Component component;
-		private ComponentListener listener;
 		
 		@Before
 		public void setUp() {
 			component = new Component();
-			listener = mock(ComponentListener.class);
 			
 			component.setBounds(0, 0, 10, 10);
-			component.addListener(listener);
 		}
 		@Test
 		public void forwardsToChild() {
@@ -240,6 +236,24 @@ public class ComponentTest {
 			
 			component.handleMouse(5, 5, MouseButton.NONE);
 			verify(childListener).mouseEntered(child);
+		}
+	}
+	public static class Render {
+		private Component component;
+		
+		@Before
+		public void setUp() {
+			component = new Component();
+			
+			component.setBounds(0, 0, 10, 10);
+		}
+		@Test
+		public void forwardsToChild() {
+			Component child = mock(Component.class);
+			child.setBounds(0, 0, 10, 10);
+			
+			child.render();
+			verify(child).render();
 		}
 	}
 }
