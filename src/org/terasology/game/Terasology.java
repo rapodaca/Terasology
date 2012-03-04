@@ -23,6 +23,7 @@ import org.lwjgl.opengl.GLContext;
 import org.terasology.game.modes.IGameState;
 import org.terasology.game.modes.StateMainMenu;
 import org.terasology.game.modes.StateSinglePlayer;
+import org.terasology.game.modes.TestState;
 import org.terasology.logic.characters.Player;
 import org.terasology.logic.manager.*;
 import org.terasology.logic.world.IWorldProvider;
@@ -69,10 +70,11 @@ public final class Terasology {
 
     /* GAME MODES */
     public enum GAME_STATE {
-        UNDEFINED, MAIN_MENU, SINGLE_PLAYER
+        UNDEFINED, MAIN_MENU, SINGLE_PLAYER, TEST;
     }
 
-    static GAME_STATE _state = GAME_STATE.MAIN_MENU;
+//    static GAME_STATE _state = GAME_STATE.MAIN_MENU;
+    static GAME_STATE _state = GAME_STATE.TEST;
     private static Map<GAME_STATE, IGameState> _gameStates = Collections.synchronizedMap(new EnumMap<GAME_STATE, IGameState>(GAME_STATE.class));
 
     public static Terasology getInstance() {
@@ -354,6 +356,8 @@ public final class Terasology {
             case UNDEFINED:
                 getLogger().log(Level.SEVERE, "Undefined game state. Can not run!");
                 return null;
+            case TEST:
+            	state = new TestState();
         }
 
         state.init();
