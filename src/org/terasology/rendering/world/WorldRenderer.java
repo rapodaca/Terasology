@@ -29,7 +29,7 @@ import org.terasology.model.blocks.management.BlockManager;
 import org.terasology.model.structures.AABB;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.rendering.cameras.Camera;
-import org.terasology.rendering.cameras.FirstPersonCamera;
+import org.terasology.rendering.cameras.DefaultCamera;
 import org.terasology.rendering.interfaces.IGameObject;
 import org.terasology.rendering.particles.BlockParticleEmitter;
 import org.terasology.rendering.physics.BulletPhysicsRenderer;
@@ -71,7 +71,7 @@ public final class WorldRenderer implements IGameObject {
     }
 
     private CAMERA_MODE _cameraMode = CAMERA_MODE.PLAYER;
-    private Camera _spawnCamera = new FirstPersonCamera();
+    private Camera _spawnCamera = new DefaultCamera();
 
     /* CHUNKS */
     private final ArrayList<Chunk> _chunksInProximity = new ArrayList<Chunk>();
@@ -310,8 +310,9 @@ public final class WorldRenderer implements IGameObject {
         glEnable(GL_LIGHT0);
 
         boolean headUnderWater = false;
+
         if (_cameraMode == CAMERA_MODE.PLAYER)
-            _player.isHeadUnderWater();
+            headUnderWater = _player.isHeadUnderWater();
 
         if (_wireframe)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -352,7 +353,6 @@ public final class WorldRenderer implements IGameObject {
             _renderQueueTransparent.poll().render();
 
         PerformanceMonitor.endActivity();
-
 
         PerformanceMonitor.startActivity("Render ChunkWaterIce");
 
@@ -480,8 +480,18 @@ public final class WorldRenderer implements IGameObject {
         cameraPosition.x += Math.sin(getTick() * 0.0005f) * 32f;
         cameraPosition.z += Math.cos(getTick() * 0.0005f) * 32f;
 
+        Vector3d playerToCamera = new Vector3d();
+        playerToCamera.sub(_player.getPosition(), cameraPosition);
+        double distanceToPlayer = playerToCamera.length();
+
         Vector3d cameraDirection = new Vector3d();
-        cameraDirection.sub(_player.getSpawningPoint(), cameraPosition);
+
+        if (distanceToPlayer > 64.0) {
+            cameraDirection.sub(_player.getSpawningPoint(), cameraPosition);
+        } else {
+            cameraDirection.set(playerToCamera);
+        }
+
         cameraDirection.normalize();
 
         _spawnCamera.getPosition().set(cameraPosition);
@@ -567,6 +577,8 @@ public final class WorldRenderer implements IGameObject {
 
         _player.load();
         _player.setSpawningPoint(_worldProvider.nextSpawningPoint());
+        updateChunksInProximity(true);
+
         _player.reset();
 
         // Only respawn the player if no position was loaded
@@ -602,8 +614,6 @@ public final class WorldRenderer implements IGameObject {
      * @return
      */
     public boolean generateChunk() {
-        updateChunksInProximity(false);
-
         for (int i = 0; i < _chunksInProximity.size(); i++) {
             Chunk c = _chunksInProximity.get(i);
 
